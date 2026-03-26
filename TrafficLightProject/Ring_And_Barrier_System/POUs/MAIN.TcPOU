@@ -40,21 +40,21 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[//IF b_Trigger THEN
-	//fb_Ring_One.Execute_Ring_Sequence();
-	//fb_Ring_Two.Execute_Ring_Sequence();
-//END_IF
+      <ST><![CDATA[IF b_Trigger THEN
+	fb_Ring_One.Execute_Ring_Sequence();
+	fb_Ring_Two.Execute_Ring_Sequence();
+END_IF
 
 // Call falling edge trigger
-//fb_Detect_Phase_Complete(CLK := fb_Ring_One.b_Busy);
+fb_Detect_Phase_Complete(CLK := fb_Ring_One.b_Busy);
 
 // Detect a falling edge of the traffic phase being busy
-//IF fb_Detect_Phase_Complete.Q THEN
-	//b_Trigger := FALSE;
-//END_IF
+IF fb_Detect_Phase_Complete.Q THEN
+	b_Trigger := FALSE;
+END_IF
 
 // Testing flashing stop
-fb_Major_Street_Left_Turn_Phase_1.Flashing_Stop(b_Stop_Traffic := b_Trigger);]]></ST>
+//fb_Major_Street_Left_Turn_Phase_1.Flashing_Stop(b_Stop_Traffic := b_Trigger);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

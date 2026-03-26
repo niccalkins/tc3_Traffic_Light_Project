@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4026.20">
+<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4026.20" TcVersionFixed="true">
 	<Project ProjectGUID="{530A6819-7320-45D9-9DD2-4721E5DEC21B}" TargetNetId="199.4.42.250.1.1" Target64Bit="true" ShowHideConfigurations="#x3c7">
 		<System>
 			<Tasks>
