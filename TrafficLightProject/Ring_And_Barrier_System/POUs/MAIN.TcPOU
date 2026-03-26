@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="MAIN" Id="{b18e59a6-4bec-41dd-8b04-719eea72ac90}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	// Initialize Major Street Traffic Phase Function Blocks
+	fb_Major_Street_Left_Turn_Phase_1 : fb_Traffic_Phase := (st_Phase_Info := Traffic_Phases.st_Phase_1);
+	fb_Major_Street_Forward_Phase_2 : fb_Traffic_Phase := (st_Phase_Info := Traffic_Phases.st_Phase_2);
+	fb_Major_Street_Left_Turn_Phase_5 : fb_Traffic_Phase := (st_Phase_Info := Traffic_Phases.st_Phase_5);
+	fb_Major_Street_Forward_Phase_6 : fb_Traffic_Phase := (st_Phase_Info := Traffic_Phases.st_Phase_6);
+	
+	// Initialize Minor Street Traffic Phase Function Blocks
+	fb_Minor_Street_Left_Turn_Phase_3 : fb_Traffic_Phase := (st_Phase_Info := Traffic_Phases.st_Phase_3);
+	fb_Minor_Street_Forward_Phase_4 : fb_Traffic_Phase := (st_Phase_Info := Traffic_Phases.st_Phase_4);
+	fb_Minor_Street_Left_Turn_Phase_7 : fb_Traffic_Phase := (st_Phase_Info := Traffic_Phases.st_Phase_7);
+	fb_Minor_Street_Forward_Phase_8 : fb_Traffic_Phase := (st_Phase_Info := Traffic_Phases.st_Phase_8);
+	
+	// Initialize Traffic Phase Arrays
+	a_Ring_1 : ARRAY[1..4] OF POINTER TO fb_Traffic_Phase := [
+		ADR(fb_Major_Street_Left_Turn_Phase_1),
+		ADR(fb_Major_Street_Forward_Phase_2),
+		ADR(fb_Minor_Street_Left_Turn_Phase_3),
+		ADR(fb_Minor_Street_Forward_Phase_4)
+	];
+	
+	a_Ring_2 : ARRAY[1..4] OF POINTER TO fb_Traffic_Phase := [
+		ADR(fb_Major_Street_Left_Turn_Phase_5),
+		ADR(fb_Major_Street_Forward_Phase_6),
+		ADR(fb_Minor_Street_Left_Turn_Phase_7),
+		ADR(fb_Minor_Street_Forward_Phase_8)
+	];
+	
+	// Initialize Traffic Ring Objects
+	fb_Ring_One : fb_Ring_And_Barrier := (a_Phase_Sequence := a_Ring_1);
+	fb_Ring_Two : fb_Ring_And_Barrier := (a_Phase_Sequence := a_Ring_2);
+	
+	
+	b_Trigger : BOOL := FALSE;
+	fb_Detect_Phase_Complete : F_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//IF b_Trigger THEN
+	//fb_Ring_One.Execute_Ring_Sequence();
+	//fb_Ring_Two.Execute_Ring_Sequence();
+//END_IF
+
+// Call falling edge trigger
+//fb_Detect_Phase_Complete(CLK := fb_Ring_One.b_Busy);
+
+// Detect a falling edge of the traffic phase being busy
+//IF fb_Detect_Phase_Complete.Q THEN
+	//b_Trigger := FALSE;
+//END_IF
+
+// Testing flashing stop
+fb_Major_Street_Left_Turn_Phase_1.Flashing_Stop(b_Stop_Traffic := b_Trigger);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

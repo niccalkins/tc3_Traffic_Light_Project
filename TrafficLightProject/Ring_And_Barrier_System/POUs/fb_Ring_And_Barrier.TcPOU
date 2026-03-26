@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="fb_Ring_And_Barrier" Id="{0903529f-5d59-47dd-a8ea-adbbaea48fea}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK fb_Ring_And_Barrier
+VAR_INPUT
+	a_Phase_Sequence : ARRAY[1..i_Number_Of_Phases] OF Pointer to fb_Traffic_Phase;
+END_VAR
+VAR CONSTANT
+	i_Number_Of_Phases : INT := 4;
+END_VAR
+VAR
+	// Trigger to detect the end of a traffic phase
+	fb_Detect_Phase_Complete : F_TRIG;
+	
+	// Index of the traffic phase currently operating in the ring sequence
+	i_Ring_Index : INT := 1;
+END_VAR
+VAR_OUTPUT
+	// Describes if the function block is operating
+	b_Busy : BOOL := FALSE;
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Execute_Ring_Sequence" Id="{42eb348f-33a6-4178-8550-c720e5b1e86a}">
+      <Declaration><![CDATA[METHOD PUBLIC Execute_Ring_Sequence
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT b_Busy THEN
+	b_Busy := TRUE;
+END_IF
+
+// Execute the traffic phase
+a_Phase_Sequence[i_Ring_Index]^.Excute_Traffic_Phase();
+
+// Call falling edge trigger
+fb_Detect_Phase_Complete(CLK := a_Phase_Sequence[i_Ring_Index]^.b_Busy);
+	
+// Detect if the traffic phase is complete
+//IF fb_Detect_Phase_Complete.Q THEN
+IF NOT a_Phase_Sequence[i_Ring_Index]^.b_Busy THEN
+	// Increment the index
+	i_Ring_Index := i_Ring_Index + 1;
+	
+	// Check if we need to reset the index
+	IF i_Ring_Index > i_Number_Of_Phases THEN
+		i_Ring_Index := 1;
+		
+		// Indicate completion
+		b_Busy := FALSE;
+	END_IF
+END_IF
+
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

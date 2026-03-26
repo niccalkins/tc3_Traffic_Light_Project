@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="st_Event" Id="{40a63048-541b-46ea-b8e8-913401d4b898}">
+    <Declaration><![CDATA[TYPE st_Event :
+STRUCT
+	e_Event_Type : e_Event_Type;
+	e_Event_Severity : TcEventSeverity;
+	n_Event_Identity : UDINT;
+	s_Event_Text : STRING(255);
+	dt_Timestamp : DATE_AND_TIME;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

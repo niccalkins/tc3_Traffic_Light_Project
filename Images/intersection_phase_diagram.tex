@@ -1,0 +1,60 @@
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{stmaryrd}
+
+\begin{document}
+\tikzset{
+    % Textbox
+    block/.style = {
+        draw=blue,
+        ultra thick,
+        rectangle,
+        fill = white!80,
+        text=blue,
+        font=\bfseries\small,  % Make text bold & larger
+        inner sep=5pt          % Extra padding inside the box
+    }
+}
+
+\begin{tikzpicture}
+% Place the PNG image as a node
+\node[anchor=south west, inner sep=0] (image) at (0,0) {
+    \includegraphics[width=12cm, height=7.5cm]{scripps_poway_pkwy_and_pomerado_road_satellite_view.PNG}%
+};
+    
+\begin{scope}[x={(image.south east)}, y={(image.north west)}]
+
+    % Major Street Movements
+    \node at (0.3, 0.5)[block] (phase_1) {$\varoslash$ 1};
+    \node at (0.31, 0.4)[block] (phase_6) {$\varoslash$ 6};
+
+    \node at (0.6, 0.82)[block] (phase_2) {$\varoslash$ 2};
+    \node at (0.63, 0.72)[block] (phase_5) {$\varoslash$ 5};
+
+    % Minor Street Movements
+    \node at (0.45, 0.85)[block] (phase_3) {$\varoslash$ 3};
+    \node at (0.36, 0.83)[block] (phase_8) {$\varoslash$ 8};
+
+    \node at (0.6, 0.37)[block] (phase_4) {$\varoslash$ 4};
+    \node at (0.51, 0.35)[block] (phase_7) {$\varoslash$ 7};
+
+    % Left Turns
+    \draw [->, ultra thick, blue] (phase_1.east) arc (-90:10:0.5cm);
+    \draw [->, ultra thick, blue] (phase_3.south) arc (190:290:0.5cm);
+    \draw [->, ultra thick, blue] (phase_5.west) arc (110:210:0.5cm);
+    \draw [->, ultra thick, blue] (phase_7.north) arc (10:110:0.5cm);
+
+    % Thru Movements
+    \draw [->, ultra thick, blue] (phase_2.235) -- (0.5, 0.7);
+    \draw [->, ultra thick, blue] (phase_4.130) -- (0.55, 0.53);
+    \draw [->, ultra thick, blue] (phase_6.10) -- (0.44, 0.49);
+    \draw [->, ultra thick, blue] (phase_8.310) -- (0.42, 0.66);
+
+    % Permissible Right Turns
+    \draw [->, dashed, ultra thick, blue] (phase_2.235) arc (290:200:0.5cm);
+    \draw [->, dashed, ultra thick, blue] (phase_4.130) arc (190:100:0.5cm);
+    \draw [->, dashed, ultra thick, blue] (phase_6.10) arc (110:10:0.5cm);
+    \draw [->, dashed, ultra thick, blue] (phase_8.310) arc (10:-90:0.5cm);
+\end{scope}
+\end{tikzpicture}
+\end{document}

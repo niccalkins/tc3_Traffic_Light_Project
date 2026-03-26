@@ -1,0 +1,271 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="fb_Traffic_Phase" Id="{c90505ef-afcf-4d40-a794-f6f4a4d01b58}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+This function block is used to represent a traffic phase with relevant signal outputs
+*)
+
+FUNCTION_BLOCK fb_Traffic_Phase
+// Input phase info struct
+VAR_INPUT
+	st_Phase_Info : st_Traffic_Phase_Description;
+END_VAR
+
+VAR
+	// Describes the current active state
+	e_State : e_Signal_Colors := e_Signal_Colors.PASSIVE_RED;
+	
+	// Timer for the ACTIVE_GREEN phase
+	fb_Green_Signal_Duration : TON;
+	
+	// Timer for the ACTIVE_YELLOW phase
+	fb_Yellow_Signal_Duration : TON;
+	
+	// Timer for the ACTIVE_RED intersection clearance phase
+	fb_Red_Clearance_Signal_Duration : TON;
+	
+	// Timer for the FLASHING_RED on signal
+	fb_Flashing_Red_On_Duration : TON;
+	
+	// Timer for the FLASHING_RED of signal
+	fb_Flashing_Red_Off_Duration : TON;
+END_VAR
+
+// Initialize default values for the outputs
+VAR_OUTPUT
+	b_Green_Signal_Active : BOOL := FALSE;
+	b_Yellow_Signal_Active : BOOL := FALSE;
+	b_Red_Signal_Active : BOOL := TRUE;
+	
+	// Describes if the traffic phase is operating
+	b_Busy : BOOL := FALSE;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Excute_Traffic_Phase" Id="{27ff91c4-3bbf-4929-81b9-60cc5f367713}">
+      <Declaration><![CDATA[(*
+Executes the traffic phase with three intervals for ACTIVE_GREEN, ACTIVE_YELLOW, and ACTIVE_RED states.
+*)
+
+METHOD PUBLIC Excute_Traffic_Phase
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// This starts the traffic phase
+IF NOT b_Busy AND e_State = e_Signal_Colors.PASSIVE_RED THEN
+	// Indicate the traffic phase is operating
+	b_Busy := TRUE;
+	
+	// Advance the state
+	e_State := e_Signal_Colors.ACTIVE_GREEN;
+END_IF
+
+CASE e_State OF
+	e_Signal_Colors.ACTIVE_GREEN:
+		// Wait for signal timer to complete
+		IF fb_Green_Signal_Duration.Q THEN
+			// Advance the state
+			e_State := e_Signal_Colors.ACTIVE_YELLOW;
+		END_IF
+	
+		// Define the timer
+		fb_Green_Signal_Duration(
+			IN := b_Green_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_GREEN,
+			PT := st_Phase_Info.t_Green_Right_Of_Way_Time
+		);
+	
+		// Set the outputs
+		b_Green_Signal_Active:= TRUE;
+		b_Yellow_Signal_Active := FALSE;
+		b_Red_Signal_Active := FALSE;
+		
+	e_Signal_Colors.ACTIVE_YELLOW:
+		// Wait for signal timer to complete
+		IF fb_Yellow_Signal_Duration.Q THEN
+			// Advance the state
+			e_State := e_Signal_Colors.ACTIVE_RED;
+		END_IF
+		
+		// Define the timer
+		fb_Yellow_Signal_Duration(
+			IN := b_Yellow_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_YELLOW,
+			PT := Constants.t_Yellow_Change_Time
+		);
+	
+		// Set the outputs
+		b_Green_Signal_Active:= FALSE;
+		b_Yellow_Signal_Active := TRUE;
+		b_Red_Signal_Active := FALSE;
+		
+	e_Signal_Colors.ACTIVE_RED:
+		// Wait for signal timer to complete
+		IF fb_Red_Clearance_Signal_Duration.Q THEN
+			// Advance the state
+			e_State := e_Signal_Colors.PASSIVE_RED;
+		END_IF
+		
+		// Define the timer
+		fb_Red_Clearance_Signal_Duration(
+			IN := b_Red_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_RED,
+			PT := Constants.t_Red_Clearance_Time
+		);
+		
+		// Set the outputs
+		b_Green_Signal_Active:= FALSE;
+		b_Yellow_Signal_Active := FALSE;
+		b_Red_Signal_Active := TRUE;
+	
+	e_Signal_Colors.PASSIVE_RED:
+		// Indicate the traffic phase is not busy
+		b_Busy := FALSE;
+		
+END_CASE
+
+// Call timers to ensure the elapsed time triggers
+fb_Green_Signal_Duration();
+fb_Yellow_Signal_Duration();
+fb_Red_Clearance_Signal_Duration();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Flashing_Stop" Id="{f40c6424-1e2d-4936-a0c5-4eca0a00c38e}">
+      <Declaration><![CDATA[(*
+Signal flashes red indicating traffic must treat the intersection like a stop sign.
+*)
+
+METHOD PUBLIC Flashing_Stop
+VAR_INPUT
+	b_Stop_Traffic : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Set the outputs
+b_Green_Signal_Active:= FALSE;
+b_Yellow_Signal_Active := FALSE;
+
+// Indicate the flashing red phase is operational
+IF b_Stop_Traffic AND NOT b_Busy THEN
+	b_Busy := TRUE;
+	
+	// Change the state
+	e_State := e_Signal_Colors.FLASHING_RED;
+END_IF
+
+// Input boolean stops this flashing red mode
+IF NOT b_Stop_Traffic THEN
+	b_Busy := FALSE;
+	
+	// Stops traffic
+	b_Red_Signal_Active := TRUE;
+	
+	// Change the state
+	e_State := e_Signal_Colors.PASSIVE_RED;
+END_IF
+
+
+// Wait for signal timer to complete
+IF fb_Flashing_Red_On_Duration.Q THEN
+	// Change the state to flash off
+	b_Red_Signal_Active := FALSE;
+END_IF
+
+// Wait for signal timer to complete
+IF fb_Flashing_Red_Off_Duration.Q THEN
+	// Change the state to flash on
+	b_Red_Signal_Active := TRUE;
+END_IF
+	
+// Define the timer
+fb_Flashing_Red_On_Duration(
+	IN := b_Red_Signal_Active AND e_State = e_Signal_Colors.FLASHING_RED,
+	PT := Constants.t_Flashing_Red_Interval
+);
+
+fb_Flashing_Red_Off_Duration(
+	IN := NOT b_Red_Signal_Active AND e_State = e_Signal_Colors.FLASHING_RED,
+	PT := Constants.t_Flashing_Red_Interval
+);
+
+// Call timers to ensure the elapsed time triggers
+fb_Flashing_Red_On_Duration();
+fb_Flashing_Red_Off_Duration();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Set_Active_Green_Signal_Duration" Id="{616b552c-3ed5-45b1-b24d-3bf29689f976}">
+      <Declaration><![CDATA[(*
+Allows one to adjust the duration of the ACTIVE_GREEN signal.
+*)
+
+METHOD PUBLIC Set_Active_Green_Signal_Duration
+VAR_INPUT
+	t_Input : REFERENCE TO TIME;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[st_Phase_Info.t_Green_Right_Of_Way_Time := t_Input;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Shutdown_Traffic_Phase" Id="{c159aa30-0593-4d64-b856-c4e09ae64d5d}">
+      <Declaration><![CDATA[(*
+Immediately cuts short an ACTIVE_GREEN traffic phase in the event of an emergency,
+signal switches to ACTIVE_YELLOW then ACTIVE_RED to clear the intersection as soon as possible
+*)
+
+METHOD PUBLIC Shutdown_Traffic_Phase
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE e_State OF
+	e_Signal_Colors.ACTIVE_GREEN:
+		// Advance the state as soon as possible
+		e_State := e_Signal_Colors.ACTIVE_YELLOW;
+	
+	e_Signal_Colors.ACTIVE_YELLOW:
+		// Wait for signal timer to complete
+		IF fb_Yellow_Signal_Duration.Q THEN
+			// Advance the state
+			e_State := e_Signal_Colors.ACTIVE_RED;
+		END_IF
+		
+		// Define the timer
+		fb_Yellow_Signal_Duration(
+			IN := b_Yellow_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_YELLOW,
+			PT := Constants.t_Yellow_Change_Time
+		);
+	
+		// Set the outputs
+		b_Green_Signal_Active:= FALSE;
+		b_Yellow_Signal_Active := TRUE;
+		b_Red_Signal_Active := FALSE;
+		
+	e_Signal_Colors.ACTIVE_RED:
+		// Wait for signal timer to complete
+		IF fb_Red_Clearance_Signal_Duration.Q THEN
+			// Advance the state
+			e_State := e_Signal_Colors.PASSIVE_RED;
+		END_IF
+		
+		// Define the timer
+		fb_Red_Clearance_Signal_Duration(
+			IN := b_Red_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_RED,
+			PT := Constants.t_Red_Clearance_Time
+		);
+		
+		// Set the outputs
+		b_Green_Signal_Active:= FALSE;
+		b_Yellow_Signal_Active := FALSE;
+		b_Red_Signal_Active := TRUE;
+	
+	e_Signal_Colors.PASSIVE_RED:
+		// Indicate the traffic phase is not busy
+		b_Busy := FALSE;
+		
+END_CASE
+
+// Call timers to ensure the elapsed time triggers
+fb_Yellow_Signal_Duration();
+fb_Red_Clearance_Signal_Duration();]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <GVL Name="Constants" Id="{7411411d-394f-40a7-8542-850d1add266f}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL CONSTANT
+	// The time interval where the yellow light indicates an impending signal change
+	t_Yellow_Change_Time : TIME := T#5S;
+	
+	// The time interval to wait for the intersection to clear before reaching a barrier and starting a new phase
+	t_Red_Clearance_Time: TIME := T#3S;
+	
+	// The time interval for a flashing red signal in the event of a fault
+	t_Flashing_Red_Interval : TIME := T#1.5S;
+	
+	// The time interval alloted for protected left turns
+	t_Protected_Left_Turn_Time : TIME := T#5S;
+	
+	// The time interval alloted for forward travel through the intersection
+	t_Forward_Travel_Time : TIME := T#5S;
+END_VAR
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

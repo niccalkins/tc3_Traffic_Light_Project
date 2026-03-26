@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="e_Street_Type" Id="{3ba35838-f346-4b00-aeb3-75442e226b3e}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+{attribute 'to_string'}
+TYPE e_Street_Type :
+(
+	Major := 0,
+	Minor := 1
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="st_Traffic_Phase_Description" Id="{a862862a-899c-4d19-abfc-3264f12bc48a}">
+    <Declaration><![CDATA[TYPE st_Traffic_Phase_Description :
+STRUCT
+	n_Phase_Identity : UINT;
+	e_Street_Identity : e_Street_Type;
+	t_Green_Right_Of_Way_Time : TIME;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

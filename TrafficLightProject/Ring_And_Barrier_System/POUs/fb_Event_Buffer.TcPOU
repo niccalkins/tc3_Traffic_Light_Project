@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="fb_Event_Buffer" Id="{9bed9f42-dd6b-4d78-a4eb-4a6231e2c29a}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+FB_EventBuffer is an implementation of an event buffer with the FB_MemRingBuffer function block
+provided in the Tc2_Utilities library.
+
+
+TODO: Implement error handling if event addition or event reading is unsuccessful
+*)
+
+FUNCTION_BLOCK PUBLIC fb_Event_Buffer
+VAR
+	// Buffer memory used by FB_MemRingBuffer function block
+	arr_Buffer_Memory : ARRAY[0..i_Buffer_Memory_Byte_Size] OF BYTE;
+	
+	// Create an instance of the MemRingBuffer
+	fb_Event_Ring_Buffer : FB_MemRingBuffer;
+END_VAR
+
+VAR CONSTANT
+	// The number of events to store in the event buffer
+	i_Number_Of_Events_To_Store_In_Buffer : INT := 5;
+	
+	// The size of an event in bytes
+	i_Event_Byte_Size : INT := SIZEOF(st_Event);
+	
+	// The total number of bytes in the buffer memory
+	i_Buffer_Memory_Byte_Size : INT := i_Number_Of_Events_To_Store_In_Buffer * i_Event_Byte_Size;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Add_Event" Id="{d243d2fa-f186-4144-8e30-9ad3e6d48069}">
+      <Declaration><![CDATA[(*
+Attempts to add an event to the buffer and returns a boolean to show if successful.
+*)
+
+METHOD PUBLIC Add_Event : BOOL
+VAR_INPUT
+	st_Event_To_Add : REFERENCE TO st_Event;
+END_VAR
+VAR_OUTPUT
+	b_Error : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Try to add the event to the buffer
+fb_Event_Ring_Buffer.A_AddTail(
+	pWrite := ADR(st_Event_To_Add),
+	cbWrite := SIZEOF(st_Event_To_Add),
+	pBuffer := ADR(arr_Buffer_Memory),
+	cbBuffer := SIZEOF(arr_Buffer_Memory)
+);
+
+// Indicate if successful
+b_Error := NOT fb_Event_Ring_Buffer.bOk;
+	]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Get_And_Remove_Event" Id="{6bb690dc-bd62-4c46-9c2f-b2d4db47e7bf}">
+      <Declaration><![CDATA[(*
+Attemps to read and remove an event from the buffer and returns a boolean to show if successful.
+*)
+
+METHOD PUBLIC Get_And_Remove_Event : BOOL
+VAR_OUTPUT
+	st_Event_Read_From_Buffer : st_Event;
+
+	b_Error : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Try to read the oldest event from the buffer
+fb_Event_Ring_Buffer.A_RemoveHead (
+	pRead := ADR(st_Event_Read_From_Buffer),
+	cbRead := SIZEOF(st_Event_Read_From_Buffer),
+	pBuffer := ADR(arr_Buffer_Memory),
+	cbBuffer := SIZEOF(arr_Buffer_Memory)
+);
+
+// Indicate if successful
+b_Error := NOT fb_Event_Ring_Buffer.bOk;
+	]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Reset_Buffer" Id="{d090a07b-1ba0-487a-a734-84556d04cc73}">
+      <Declaration><![CDATA[(*
+Resets the buffer.
+*)
+
+METHOD PUBLIC Reset_Buffer : BOOL
+VAR_OUTPUT
+	b_Error : Bool;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Reset buffer
+fb_Event_Ring_Buffer.A_Reset();
+
+// Indicate if successful
+b_Error := NOT fb_Event_Ring_Buffer.bOk;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

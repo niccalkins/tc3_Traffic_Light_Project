@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <GVL Name="Traffic_Phases" Id="{0beaac45-09cf-4767-98e6-a3b92934cac7}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	// Define the major street traffic phases
+	st_Phase_1 : st_Traffic_Phase_Description := (
+		n_Phase_Identity := 1,
+		e_Street_Identity := e_Street_Type.Major,
+		t_Green_Right_Of_Way_Time := Constants.t_Protected_Left_Turn_Time
+	);
+	
+	st_Phase_2 : st_Traffic_Phase_Description := (
+		n_Phase_Identity := 2,
+		e_Street_Identity := e_Street_Type.Major,
+		t_Green_Right_Of_Way_Time := Constants.t_Forward_Travel_Time
+	);
+	
+	st_Phase_5 : st_Traffic_Phase_Description := (
+		n_Phase_Identity := 5,
+		e_Street_Identity := e_Street_Type.Major,
+		t_Green_Right_Of_Way_Time := Constants.t_Protected_Left_Turn_Time
+	);
+	
+	st_Phase_6 : st_Traffic_Phase_Description := (
+		n_Phase_Identity := 6,
+		e_Street_Identity := e_Street_Type.Major,
+		t_Green_Right_Of_Way_Time := Constants.t_Forward_Travel_Time
+	);
+	
+	
+	// Define the minor street traffic phases
+	st_Phase_3 : st_Traffic_Phase_Description := (
+		n_Phase_Identity := 3,
+		e_Street_Identity := e_Street_Type.Minor,
+		t_Green_Right_Of_Way_Time := Constants.t_Protected_Left_Turn_Time
+	);
+	
+	st_Phase_4 : st_Traffic_Phase_Description := (
+		n_Phase_Identity := 4,
+		e_Street_Identity := e_Street_Type.Minor,
+		t_Green_Right_Of_Way_Time := Constants.t_Forward_Travel_Time
+	);
+	
+	st_Phase_7 : st_Traffic_Phase_Description := (
+		n_Phase_Identity := 7,
+		e_Street_Identity := e_Street_Type.Minor,
+		t_Green_Right_Of_Way_Time := Constants.t_Protected_Left_Turn_Time
+	);
+	
+	st_Phase_8 : st_Traffic_Phase_Description := (
+		n_Phase_Identity := 8,
+		e_Street_Identity := e_Street_Type.Minor,
+		t_Green_Right_Of_Way_Time := Constants.t_Forward_Travel_Time
+	);
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

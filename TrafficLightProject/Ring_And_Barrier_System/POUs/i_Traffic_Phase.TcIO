@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="i_Traffic_Phase" Id="{83da61c9-9c47-476d-8a97-e58859bf064a}">
+    <Declaration><![CDATA[INTERFACE i_Traffic_Phase
+VAR
+	n_Phase_ID : INT;
+END_VAR
+]]></Declaration>
+  </Itf>
+</TcPlcObject>
