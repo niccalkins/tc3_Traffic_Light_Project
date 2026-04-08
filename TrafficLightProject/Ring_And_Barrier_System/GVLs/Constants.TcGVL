@@ -17,6 +17,9 @@ VAR_GLOBAL CONSTANT
 	
 	// The time interval alloted for forward travel through the intersection
 	t_Forward_Travel_Time : TIME := T#5S;
+	
+	// The local filepath to the csv event log
+	s_CSV_Event_Log_Filepath : T_MaxString := 'C:\Users\Nic C\Documents\twincat3_ws\tc3_Traffic_Light_Project\events.log';
 END_VAR
 ]]></Declaration>
   </GVL>

@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="fb_CSV_Event_Storage" Id="{9427be41-2858-432a-a0b8-f27f615882f2}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+Used to store events in the .csv file format.
+*)
+
+FUNCTION_BLOCK fb_CSV_Event_Storage IMPLEMENTS i_Persistent_Event_Storage
+VAR_INPUT
+	s_Local_File_Path : T_MaxString;
+END_VAR
+
+VAR
+	e_Write_State : (
+		FILE_OPEN_TRIGGER,
+		FILE_OPEN,
+		WAIT_FOR_EVENT,
+		WRITE_EVENT_TRIGGER,
+		WRITE_EVENT,
+		FILE_CLOSE_TRIGGER,
+		FILE_CLOSE,
+		ERROR
+	);
+	
+	// Create function blocks to open, write to, and close a csv file
+	FB_File_Open : FB_FileOpen;
+	FB_File_Write : FB_FilePuts;
+	FB_File_Close : FB_FileClose;
+	
+	// Event to write to csv file
+	st_Event_Written_To_File : st_Event;
+	
+	// String that gets written to the csv file
+	s_CSV_String : T_MaxString;
+	
+	// Error message
+	s_Error_Msg : STRING;
+END_VAR
+VAR_OUTPUT
+	b_Busy : BOOL := FALSE; 
+	b_Error : BOOL := FALSE;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE e_Write_State OF
+	FILE_OPEN_TRIGGER:
+		FB_File_Open(
+			bExecute := TRUE,
+			sPathName := s_Local_File_Path,
+			nMode := FOPEN_MODEAPPEND
+		);
+		e_Write_State := FILE_OPEN;
+		
+		b_Busy := TRUE;
+		
+	FILE_OPEN :
+		FB_File_Open(bExecute := FALSE);
+		
+		IF FB_File_Open.bError THEN
+			e_Write_State := ERROR;
+			
+			// Write error message
+			s_Error_Msg := CONCAT(
+				STR1 := 'CSV Event Storage error encountered when opening file with ADS return code of: ',
+				STR2 := TO_STRING(FB_File_Close.nErrId)
+			);
+			
+		ELSIF NOT FB_File_Open.bBusy AND FB_File_Open.hfile <> 0 THEN
+			e_Write_State := WAIT_FOR_EVENT;
+		END_IF
+		
+	WAIT_FOR_EVENT : 
+		b_Busy := FALSE;
+		
+	WRITE_EVENT_TRIGGER :
+		s_CSV_String := Create_CSV_String(st_Event_Data := st_Event_Written_To_File);
+		FB_File_Write(
+			bExecute := TRUE,
+			hFile := FB_File_Open.hFile,
+			sLine := s_CSV_String
+		);
+		e_Write_State := WRITE_EVENT;
+		b_Busy := TRUE;
+		
+	WRITE_EVENT:
+		FB_File_Write(bExecute := FALSE);
+		
+		IF FB_File_Write.bError THEN
+			e_Write_State := ERROR;
+			
+			// Write error message
+			s_Error_Msg := CONCAT(
+				STR1 := 'CSV Event Storage error encountered when writing to file with ADS return code of: ',
+				STR2 := TO_STRING(FB_File_Close.nErrId)
+			);
+			
+		ELSIF NOT FB_File_Write.bBusy THEN
+			e_Write_State := WAIT_FOR_EVENT;
+		END_IF
+	
+	FILE_CLOSE_TRIGGER :
+		FB_File_Close(
+			bExecute := TRUE,
+			hFile := FB_File_Open.hFile
+		);
+		e_Write_State := FILE_CLOSE;
+	
+	FILE_CLOSE :
+		FB_File_Close(bExecute := FALSE);
+		
+		IF FB_File_Close.bError THEN
+			e_Write_State := ERROR;
+			
+			// Write error message
+			s_Error_Msg := CONCAT(
+				STR1 := 'CSV Event Storage error encountered when closing file with ADS return code of: ',
+				STR2 := TO_STRING(FB_File_Close.nErrId)
+			);
+			
+		ELSIF NOT FB_File_Close.bBusy THEN
+			e_Write_State := FILE_OPEN_TRIGGER;
+			
+		END_IF
+		
+	ERROR :
+		// Write error to log
+		ADSLOGSTR(
+			msgCtrlMask := ADSLOG_MSGTYPE_ERROR,
+			msgFmtStr := s_Error_Msg,
+			strArg := ''
+		);
+		
+		b_Error := TRUE;
+	
+END_CASE]]></ST>
+    </Implementation>
+    <Method Name="Create_CSV_String" Id="{3efbe8eb-1b76-4b55-83aa-e3675f489a51}">
+      <Declaration><![CDATA[(*
+Creates a csv string by concatenating st_Event data
+*)
+
+METHOD PRIVATE Create_CSV_String : T_MaxString
+VAR_INPUT
+	st_Event_Data : REFERENCE TO st_Event;
+END_VAR
+VAR
+	s_Temp_String : STRING(255);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[s_Temp_String := TO_STRING(st_Event_Data.n_Event_Identity);
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := ', ');
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := TO_STRING(st_Event_Data.dt_Timestamp));
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := ', ');
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := TO_STRING(st_Event_Data.e_Event_Severity));
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := ', ');
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := TO_STRING(st_Event_Data.e_Event_Type));
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := ', ');
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := st_Event_Data.s_Event_Text);
+s_Temp_String := CONCAT(STR1 := s_Temp_String, STR2 := '$n');
+Create_CSV_String := s_Temp_String;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Store_Event" Id="{4319b193-ed73-421a-a908-acc8ef7e7346}">
+      <Declaration><![CDATA[(*
+Stores event details in a CSV file
+*)
+METHOD Store_Event
+VAR_INPUT
+	st_Event_To_Store : st_Event;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF e_Write_State = WAIT_FOR_EVENT THEN
+	e_Write_State := WRITE_EVENT_TRIGGER;
+	
+	st_Event_Written_To_File := st_Event_To_Store;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="Update_Event_Time" Id="{b761cc40-f5a1-4823-92bf-94bcb847f470}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION Update_Event_Time : st_Event
+VAR_INPUT
+	st_Current_Event : REFERENCE TO st_Event;
+END_VAR
+VAR
+	// Create an instance of the function block
+	fb_Get_System_Time : GetSystemTime;
+	
+	// Create variables to contain the outputs of the function block
+	nLowTime : UDINT;
+	nHighTime : UDINT;
+	
+	// Create a filetime struct to contain data
+	stFileTime : T_FILETIME;
+	
+	// Create a date time object to contain the timestamp
+	dt_Timestamp : DT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Get the current system time from the PLC
+fb_Get_System_Time(timeLoDW => nLowTime, timeHiDW => nHighTime);
+
+// The timestamp we have is a 64 bit integer value
+// with an accuracy of 100 ns. One unit corresponds to
+// 100 ns, this time stamp represents the number of
+// 100 ns intervals since January 1, 1601 (UTC)
+
+// We add this information to the filetime struct
+stFileTime.dwLowDateTime := nLowTime;
+stFileTime.dwHighDateTime := nHighTime;
+
+// We convert this filetime struct to a date time object
+dt_Timestamp := FILETIME_TO_DT(fileTime := stFileTime);
+
+// Update the date time in the event struct
+st_Current_Event.dt_Timestamp := dt_Timestamp;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

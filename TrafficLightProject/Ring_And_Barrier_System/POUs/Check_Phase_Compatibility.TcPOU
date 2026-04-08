@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="Check_Phase_Compatibility" Id="{d35923ca-f9be-4f8a-b919-3bef0a4502e7}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+Checks if two traffic phases are compatible using their phase identity number.
+Two compatible traffic phases can be run concurrently without causing traffic
+conflicts.
+*)
+
+FUNCTION Check_Phase_Compatibility : Bool
+VAR_INPUT
+	fb_Phase_A : REFERENCE TO fb_Traffic_Phase;
+	fb_Phase_B : REFERENCE TO fb_Traffic_Phase;
+END_VAR
+VAR
+	n_ID_A : UINT := fb_Phase_A.st_Phase_Info.n_Phase_Identity;
+	n_ID_B : UINT := fb_Phase_B.st_Phase_Info.n_Phase_Identity;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Check the street identity
+IF fb_Phase_A.st_Phase_Info.e_Street_Identity = fb_Phase_B.st_Phase_Info.e_Street_Identity THEN
+	// Check if one ID is odd and one is even
+	IF (n_ID_A + n_ID_B) MOD 2 = 1 THEN
+		Check_Phase_Compatibility := FALSE;
+	
+	// IDs are either both odd or both even
+	ELSE
+		Check_Phase_Compatibility := TRUE;
+	END_IF
+
+ELSE
+	Check_Phase_Compatibility := FALSE;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

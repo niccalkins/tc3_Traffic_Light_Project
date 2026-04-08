@@ -6,9 +6,10 @@
 {attribute 'to_string'}
 TYPE e_Event_Type :
 (
-	Alarm := 0,
-	Message := 1,
-	Phase_Change := 2
+	Emergency := 0,
+	Warning := 1,
+	Message := 2,
+	Phase_Change := 3
 );
 END_TYPE
 ]]></Declaration>

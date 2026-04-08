@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <DUT Name="e_Signal_Colors" Id="{636b57e0-bcf9-43c6-aebd-664d8291dd79}">
+  <DUT Name="e_Signal_States" Id="{636b57e0-bcf9-43c6-aebd-664d8291dd79}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 {attribute 'strict'}
 {attribute 'to_string'}
-TYPE e_Signal_Colors :
+TYPE e_Signal_States :
 (
 	ACTIVE_RED := 0,
 	ACTIVE_YELLOW := 1,

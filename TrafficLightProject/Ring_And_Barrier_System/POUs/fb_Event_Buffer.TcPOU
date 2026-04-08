@@ -4,9 +4,6 @@
     <Declaration><![CDATA[(*
 FB_EventBuffer is an implementation of an event buffer with the FB_MemRingBuffer function block
 provided in the Tc2_Utilities library.
-
-
-TODO: Implement error handling if event addition or event reading is unsuccessful
 *)
 
 FUNCTION_BLOCK PUBLIC fb_Event_Buffer
@@ -20,13 +17,17 @@ END_VAR
 
 VAR CONSTANT
 	// The number of events to store in the event buffer
-	i_Number_Of_Events_To_Store_In_Buffer : INT := 5;
+	i_Number_Of_Events_To_Store_In_Buffer : INT := 10;
 	
 	// The size of an event in bytes
 	i_Event_Byte_Size : INT := SIZEOF(st_Event);
 	
 	// The total number of bytes in the buffer memory
 	i_Buffer_Memory_Byte_Size : INT := i_Number_Of_Events_To_Store_In_Buffer * i_Event_Byte_Size;
+END_VAR
+
+VAR_OUTPUT
+	n_Events_In_Buffer : UINT := 0;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -56,6 +57,9 @@ fb_Event_Ring_Buffer.A_AddTail(
 
 // Indicate if successful
 b_Error := NOT fb_Event_Ring_Buffer.bOk;
+
+// Increase the count
+n_Events_In_Buffer := n_Events_In_Buffer + 1;
 	]]></ST>
       </Implementation>
     </Method>
@@ -64,7 +68,7 @@ b_Error := NOT fb_Event_Ring_Buffer.bOk;
 Attemps to read and remove an event from the buffer and returns a boolean to show if successful.
 *)
 
-METHOD PUBLIC Get_And_Remove_Event : BOOL
+METHOD PUBLIC Get_And_Remove_Event
 VAR_OUTPUT
 	st_Event_Read_From_Buffer : st_Event;
 
@@ -82,7 +86,9 @@ fb_Event_Ring_Buffer.A_RemoveHead (
 
 // Indicate if successful
 b_Error := NOT fb_Event_Ring_Buffer.bOk;
-	]]></ST>
+
+// Decrease the count
+n_Events_In_Buffer := n_Events_In_Buffer - 1;]]></ST>
       </Implementation>
     </Method>
     <Method Name="Reset_Buffer" Id="{d090a07b-1ba0-487a-a734-84556d04cc73}">

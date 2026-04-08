@@ -31,18 +31,31 @@ VAR
 	];
 	
 	// Initialize Traffic Ring Objects
-	fb_Ring_One : fb_Ring_And_Barrier := (a_Phase_Sequence := a_Ring_1);
-	fb_Ring_Two : fb_Ring_And_Barrier := (a_Phase_Sequence := a_Ring_2);
+	fb_Ring_One : fb_Ring_And_Barrier := (a_Phase_Sequence := a_Ring_1, fb_Event_Buffer := fb_Event_Buffer);
+	fb_Ring_Two : fb_Ring_And_Barrier := (a_Phase_Sequence := a_Ring_2, fb_Event_Buffer := fb_Event_Buffer);
 	
+	// Initialize the event number for logging
+	n_Event_ID : UINT := 1;
 	
+	// Initialize Event Buffer
+	fb_Event_Buffer : fb_Event_Buffer;
+	// Initialize Event Read From Buffer
+	st_Event_Read_From_Buffer : st_Event;
+	// Initialize Error Flag
+	b_Error : Bool;
+	
+	// Initialize CSV Storage
+	fb_CSV_Storage : fb_CSV_Event_Storage := (s_Local_File_Path := Constants.s_CSV_Event_Log_Filepath);
+	
+	// Used to test once
 	b_Trigger : BOOL := FALSE;
 	fb_Detect_Phase_Complete : F_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF b_Trigger THEN
-	fb_Ring_One.Execute_Ring_Sequence();
-	fb_Ring_Two.Execute_Ring_Sequence();
+	fb_Ring_One.Execute_Ring_Sequence(n_Event_ID := n_Event_ID);
+	fb_Ring_Two.Execute_Ring_Sequence(n_Event_ID := n_Event_ID);
 END_IF
 
 // Call falling edge trigger
@@ -52,6 +65,20 @@ fb_Detect_Phase_Complete(CLK := fb_Ring_One.b_Busy);
 IF fb_Detect_Phase_Complete.Q THEN
 	b_Trigger := FALSE;
 END_IF
+
+// Write events in buffer if necessary
+IF NOT fb_CSV_Storage.b_Busy AND fb_Event_Buffer.n_Events_In_Buffer <> 0 THEN
+	fb_Event_Buffer.Get_And_Remove_Event(
+		st_Event_Read_From_Buffer => st_Event_Read_From_Buffer,
+		b_Error => b_Error
+	);
+	
+	// Store the event in the log
+	fb_CSV_Storage.Store_Event(st_Event_To_Store := st_Event_Read_From_Buffer);
+END_IF
+
+// Call the storage function block every cycle so that it can continuously logs events
+fb_CSV_Storage(s_Local_File_Path := Constants.s_CSV_Event_Log_Filepath);
 
 // Testing flashing stop
 //fb_Major_Street_Left_Turn_Phase_1.Flashing_Stop(b_Stop_Traffic := b_Trigger);]]></ST>

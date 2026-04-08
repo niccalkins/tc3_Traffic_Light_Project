@@ -16,6 +16,26 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"6"</v>
+              <v n="TextDefault">"Pomerado Rd Northbound"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"65"</v>
+              <v n="TextDefault">"Pomerado Rd Southbound"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"934"</v>
+              <v n="TextDefault">"Scripps Poway Pkwy Eastbound"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"475"</v>
+              <v n="TextDefault">"Scripps Poway Pkwy Westbound"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"348"</v>
               <v n="TextDefault">"⬅"</v>
               <l n="LanguageTexts" t="ArrayList" />

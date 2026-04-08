@@ -2,7 +2,7 @@
 <TcPlcObject Version="1.1.0.1">
   <POU Name="fb_Traffic_Phase" Id="{c90505ef-afcf-4d40-a794-f6f4a4d01b58}" SpecialFunc="None">
     <Declaration><![CDATA[(*
-This function block is used to represent a traffic phase with relevant signal outputs
+This function block is used to represent a traffic phase with relevant signal outputs.
 *)
 
 FUNCTION_BLOCK fb_Traffic_Phase
@@ -13,7 +13,7 @@ END_VAR
 
 VAR
 	// Describes the current active state
-	e_State : e_Signal_Colors := e_Signal_Colors.PASSIVE_RED;
+	e_State : e_Signal_States := e_Signal_States.PASSIVE_RED;
 	
 	// Timer for the ACTIVE_GREEN phase
 	fb_Green_Signal_Duration : TON;
@@ -27,7 +27,7 @@ VAR
 	// Timer for the FLASHING_RED on signal
 	fb_Flashing_Red_On_Duration : TON;
 	
-	// Timer for the FLASHING_RED of signal
+	// Timer for the FLASHING_RED off signal
 	fb_Flashing_Red_Off_Duration : TON;
 END_VAR
 
@@ -39,39 +39,115 @@ VAR_OUTPUT
 	
 	// Describes if the traffic phase is operating
 	b_Busy : BOOL := FALSE;
+	
+	// Output event for logging
+	st_Current_Event : st_Event;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
+    <Method Name="Create_Phase_Event" Id="{5b7f0a77-9892-4c01-9d5c-e6950829546a}">
+      <Declaration><![CDATA[METHOD PRIVATE Create_Phase_Event : st_Event
+VAR_IN_OUT
+	n_Event_ID : UINT;
+END_VAR
+VAR
+	// String of event text
+	s_Event_Text : STRING := 'Phase ';
+	
+	// This allows us to access the PLC system time
+	fb_Get_System_Time : GetSystemTime;
+
+	// Create a filetime struct to contain data
+	stFileTime : T_FILETIME;
+	nLowTime : UDINT;
+	nHighTime : UDINT;
+	
+	// Create a date time object to contain the timestamp
+	dt_Timestamp : DT;
+END_VAR
+VAR_OUTPUT
+	st_New_Event : st_Event;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Define the event ID and increment the count
+st_New_Event.n_Event_Identity := n_Event_ID;
+n_Event_ID := n_Event_ID + 1;
+
+// Get the current system time from the PLC
+fb_Get_System_Time(timeLoDW => nLowTime, timeHiDW => nHighTime);
+
+// Add this information to the filetime struct
+stFileTime.dwLowDateTime := nLowTime;
+stFileTime.dwHighDateTime := nHighTime;
+
+// Convert this filetime struct to a date time object
+dt_Timestamp := FILETIME_TO_DT(fileTime := stFileTime);
+
+// Update the date time in the event struct
+st_New_Event.dt_Timestamp := dt_Timestamp;
+
+// Define the event severity
+st_New_Event.e_Event_Severity := TcEventSeverity.Verbose;
+
+// Define the event type
+st_New_Event.e_Event_Type := e_Event_Type.Phase_Change;
+
+// Define the event text
+s_Event_Text := CONCAT(STR1 := s_Event_Text, STR2 := TO_STRING(st_Phase_Info.n_Phase_Identity));
+s_Event_Text := CONCAT(STR1 := s_Event_Text, ' ');
+s_Event_Text := CONCAT(STR1 := s_Event_Text, STR2 := TO_STRING(e_State));
+st_New_Event.s_Event_Text := s_Event_Text;
+
+Create_Phase_Event := st_New_Event;
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="Excute_Traffic_Phase" Id="{27ff91c4-3bbf-4929-81b9-60cc5f367713}">
       <Declaration><![CDATA[(*
 Executes the traffic phase with three intervals for ACTIVE_GREEN, ACTIVE_YELLOW, and ACTIVE_RED states.
+
+The input boolean is used to immediately cut short an ACTIVE_GREEN traffic signal in the event of an emergency.
+If triggered, the signal switches to ACTIVE_YELLOW then ACTIVE_RED to clear the intersection as soon as possible.
 *)
 
 METHOD PUBLIC Excute_Traffic_Phase
+VAR_INPUT
+	b_Shutdown_Phase_Early : BOOL;
+END_VAR
+VAR_IN_OUT
+	n_Event_ID : UINT;
+END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[// This starts the traffic phase
-IF NOT b_Busy AND e_State = e_Signal_Colors.PASSIVE_RED THEN
+IF NOT b_Busy AND e_State = e_Signal_States.PASSIVE_RED THEN
 	// Indicate the traffic phase is operating
 	b_Busy := TRUE;
 	
 	// Advance the state
-	e_State := e_Signal_Colors.ACTIVE_GREEN;
+	e_State := e_Signal_States.ACTIVE_GREEN;
+	
+	// Create a new event
+	st_Current_Event := Create_Phase_Event(n_Event_ID := n_Event_ID);
 END_IF
 
 CASE e_State OF
-	e_Signal_Colors.ACTIVE_GREEN:
-		// Wait for signal timer to complete
-		IF fb_Green_Signal_Duration.Q THEN
+	e_Signal_States.ACTIVE_GREEN:
+		// Wait for signal timer to complete or if an early shutdown is triggered
+		IF fb_Green_Signal_Duration.Q OR b_Shutdown_Phase_Early THEN
 			// Advance the state
-			e_State := e_Signal_Colors.ACTIVE_YELLOW;
+			e_State := e_Signal_States.ACTIVE_YELLOW;
+			
+			// Create a new event
+			st_Current_Event := Create_Phase_Event(n_Event_ID := n_Event_ID);
 		END_IF
 	
 		// Define the timer
 		fb_Green_Signal_Duration(
-			IN := b_Green_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_GREEN,
+			IN := b_Green_Signal_Active AND e_State = e_Signal_States.ACTIVE_GREEN,
 			PT := st_Phase_Info.t_Green_Right_Of_Way_Time
 		);
 	
@@ -80,16 +156,19 @@ CASE e_State OF
 		b_Yellow_Signal_Active := FALSE;
 		b_Red_Signal_Active := FALSE;
 		
-	e_Signal_Colors.ACTIVE_YELLOW:
+	e_Signal_States.ACTIVE_YELLOW:
 		// Wait for signal timer to complete
 		IF fb_Yellow_Signal_Duration.Q THEN
 			// Advance the state
-			e_State := e_Signal_Colors.ACTIVE_RED;
+			e_State := e_Signal_States.ACTIVE_RED;
+			
+			// Create a new event
+			st_Current_Event := Create_Phase_Event(n_Event_ID := n_Event_ID);
 		END_IF
 		
 		// Define the timer
 		fb_Yellow_Signal_Duration(
-			IN := b_Yellow_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_YELLOW,
+			IN := b_Yellow_Signal_Active AND e_State = e_Signal_States.ACTIVE_YELLOW,
 			PT := Constants.t_Yellow_Change_Time
 		);
 	
@@ -98,16 +177,16 @@ CASE e_State OF
 		b_Yellow_Signal_Active := TRUE;
 		b_Red_Signal_Active := FALSE;
 		
-	e_Signal_Colors.ACTIVE_RED:
+	e_Signal_States.ACTIVE_RED:
 		// Wait for signal timer to complete
 		IF fb_Red_Clearance_Signal_Duration.Q THEN
 			// Advance the state
-			e_State := e_Signal_Colors.PASSIVE_RED;
+			e_State := e_Signal_States.PASSIVE_RED;
 		END_IF
 		
 		// Define the timer
 		fb_Red_Clearance_Signal_Duration(
-			IN := b_Red_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_RED,
+			IN := b_Red_Signal_Active AND e_State = e_Signal_States.ACTIVE_RED,
 			PT := Constants.t_Red_Clearance_Time
 		);
 		
@@ -116,10 +195,9 @@ CASE e_State OF
 		b_Yellow_Signal_Active := FALSE;
 		b_Red_Signal_Active := TRUE;
 	
-	e_Signal_Colors.PASSIVE_RED:
+	e_Signal_States.PASSIVE_RED:
 		// Indicate the traffic phase is not busy
 		b_Busy := FALSE;
-		
 END_CASE
 
 // Call timers to ensure the elapsed time triggers
@@ -138,18 +216,25 @@ METHOD PUBLIC Flashing_Stop
 VAR_INPUT
 	b_Stop_Traffic : BOOL;
 END_VAR
+VAR_IN_OUT
+	n_Event_ID : UINT;
+END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[// Set the outputs
-b_Green_Signal_Active:= FALSE;
-b_Yellow_Signal_Active := FALSE;
-
-// Indicate the flashing red phase is operational
+        <ST><![CDATA[// Indicate the flashing red phase is operational
 IF b_Stop_Traffic AND NOT b_Busy THEN
+	// Indicate the phase is busy
 	b_Busy := TRUE;
 	
+	// Set the outputs
+	b_Green_Signal_Active:= FALSE;
+	b_Yellow_Signal_Active := FALSE;
+	
 	// Change the state
-	e_State := e_Signal_Colors.FLASHING_RED;
+	e_State := e_Signal_States.FLASHING_RED;
+	
+	// Create a new event
+	st_Current_Event := Create_Phase_Event(n_Event_ID := n_Event_ID);
 END_IF
 
 // Input boolean stops this flashing red mode
@@ -160,7 +245,7 @@ IF NOT b_Stop_Traffic THEN
 	b_Red_Signal_Active := TRUE;
 	
 	// Change the state
-	e_State := e_Signal_Colors.PASSIVE_RED;
+	e_State := e_Signal_States.PASSIVE_RED;
 END_IF
 
 
@@ -176,14 +261,13 @@ IF fb_Flashing_Red_Off_Duration.Q THEN
 	b_Red_Signal_Active := TRUE;
 END_IF
 	
-// Define the timer
+// Define the timers
 fb_Flashing_Red_On_Duration(
-	IN := b_Red_Signal_Active AND e_State = e_Signal_Colors.FLASHING_RED,
+	IN := b_Red_Signal_Active AND e_State = e_Signal_States.FLASHING_RED,
 	PT := Constants.t_Flashing_Red_Interval
 );
-
 fb_Flashing_Red_Off_Duration(
-	IN := NOT b_Red_Signal_Active AND e_State = e_Signal_Colors.FLASHING_RED,
+	IN := NOT b_Red_Signal_Active AND e_State = e_Signal_States.FLASHING_RED,
 	PT := Constants.t_Flashing_Red_Interval
 );
 
@@ -204,67 +288,6 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[st_Phase_Info.t_Green_Right_Of_Way_Time := t_Input;]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="Shutdown_Traffic_Phase" Id="{c159aa30-0593-4d64-b856-c4e09ae64d5d}">
-      <Declaration><![CDATA[(*
-Immediately cuts short an ACTIVE_GREEN traffic phase in the event of an emergency,
-signal switches to ACTIVE_YELLOW then ACTIVE_RED to clear the intersection as soon as possible
-*)
-
-METHOD PUBLIC Shutdown_Traffic_Phase
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[CASE e_State OF
-	e_Signal_Colors.ACTIVE_GREEN:
-		// Advance the state as soon as possible
-		e_State := e_Signal_Colors.ACTIVE_YELLOW;
-	
-	e_Signal_Colors.ACTIVE_YELLOW:
-		// Wait for signal timer to complete
-		IF fb_Yellow_Signal_Duration.Q THEN
-			// Advance the state
-			e_State := e_Signal_Colors.ACTIVE_RED;
-		END_IF
-		
-		// Define the timer
-		fb_Yellow_Signal_Duration(
-			IN := b_Yellow_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_YELLOW,
-			PT := Constants.t_Yellow_Change_Time
-		);
-	
-		// Set the outputs
-		b_Green_Signal_Active:= FALSE;
-		b_Yellow_Signal_Active := TRUE;
-		b_Red_Signal_Active := FALSE;
-		
-	e_Signal_Colors.ACTIVE_RED:
-		// Wait for signal timer to complete
-		IF fb_Red_Clearance_Signal_Duration.Q THEN
-			// Advance the state
-			e_State := e_Signal_Colors.PASSIVE_RED;
-		END_IF
-		
-		// Define the timer
-		fb_Red_Clearance_Signal_Duration(
-			IN := b_Red_Signal_Active AND e_State = e_Signal_Colors.ACTIVE_RED,
-			PT := Constants.t_Red_Clearance_Time
-		);
-		
-		// Set the outputs
-		b_Green_Signal_Active:= FALSE;
-		b_Yellow_Signal_Active := FALSE;
-		b_Red_Signal_Active := TRUE;
-	
-	e_Signal_Colors.PASSIVE_RED:
-		// Indicate the traffic phase is not busy
-		b_Busy := FALSE;
-		
-END_CASE
-
-// Call timers to ensure the elapsed time triggers
-fb_Yellow_Signal_Duration();
-fb_Red_Clearance_Signal_Duration();]]></ST>
       </Implementation>
     </Method>
   </POU>

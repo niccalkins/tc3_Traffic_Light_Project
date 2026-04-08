@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="Update_Event_ID" Id="{d0b22458-bca1-4598-aa0e-c8b9714ce85b}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+Updates the event identity number in the event struct and increments the count.
+*)
+
+FUNCTION Update_Event_ID : st_Event
+VAR_INPUT
+	st_Current_Event : REFERENCE TO st_Event;
+	n_Event_ID : POINTER TO UINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Assign the ID number
+st_Current_Event.n_Event_Identity := n_Event_ID^;
+
+// Increment the ID number
+n_Event_ID^ := n_Event_ID^ + 1;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -10,7 +10,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{6BF5A9A5-B2F9-4067-952D-578B48BD6F2F}" Name="Ring_And_Barrier_System" PrjFilePath="Ring_And_Barrier_System\Ring_And_Barrier_System.plcproj" TmcFilePath="Ring_And_Barrier_System\Ring_And_Barrier_System.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcHash="{74C0DA1D-7B4A-7742-5236-37A947CFA8CA}" TmcPath="Ring_And_Barrier_System\Ring_And_Barrier_System.tmc">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcHash="{2A981F7D-D25E-196F-F8A7-B1D5E96230BC}" TmcPath="Ring_And_Barrier_System\Ring_And_Barrier_System.tmc">
 					<Name>Ring_And_Barrier_System Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Contexts>
