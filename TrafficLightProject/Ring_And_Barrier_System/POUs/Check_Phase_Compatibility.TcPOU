@@ -22,7 +22,15 @@ END_VAR
 IF fb_Phase_A.st_Phase_Info.e_Street_Identity = fb_Phase_B.st_Phase_Info.e_Street_Identity THEN
 	// Check if one ID is odd and one is even
 	IF (n_ID_A + n_ID_B) MOD 2 = 1 THEN
-		Check_Phase_Compatibility := FALSE;
+		// If the phase numbers add to 7, meaning we have a 1 + 6 or 2 + 5 pair for the major street
+		// or if the phase numbers add to 11, meaning we have a 3 + 8 or 4 + 7 pair for the minor street
+		IF (n_ID_A + n_ID_B) = 7 OR (n_ID_A + n_ID_B) = 11 THEN
+			Check_Phase_Compatibility := TRUE;
+			
+		// Other possible configurations are incompatible
+		ELSE
+			Check_Phase_Compatibility := FALSE;
+		END_IF
 	
 	// IDs are either both odd or both even
 	ELSE

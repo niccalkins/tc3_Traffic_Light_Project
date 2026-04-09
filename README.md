@@ -55,7 +55,7 @@ The following conditions should be satisfied in order to implement this function
 
 # Level One: PLC Runs a Standard Ring and Barrier Sequence
 
-The goal of level one is to program the PLC to automatically run a standard ring and barrier sequence. In this level, we do not consider any inputs to the control system, rather we are just creating a pre-programmed sequence of outputs to run indefinitely. In this level, we will set the foundation for the rest of the project by creating the traffic phase function block, a basic human-machine interface (HMI visualization), and some simple logging functionality.
+The goal of level one is to program the PLC to automatically run a standard ring and barrier sequence. In this level, we do not consider any inputs to the control system, rather we are just creating a pre-programmed sequence of outputs to run indefinitely. In this level, we will set the foundation for the rest of the project by creating the traffic phase function block, a basic human-machine interface (HMI visualization), and some simple logging functionality. In this level, I will not be implementing any Pedestrian related functionality, we will also neglect the protected right turn overlap with complemntary left turns.
 
 ## Control System Outputs
 
@@ -68,12 +68,12 @@ The outputs to our system are simply Red, Yellow, and Green LED signal lights. T
 ## The Traffic Phase Function Block
 
 
-## HMI Visualization
+## Initial HMI Visualization
 
 
 ## Simple Logging Functionality
 
-
+# Level Two: Controller Responds to Inputs to the System
 
 # References
 
